@@ -14,18 +14,6 @@ Self-hosted Zeiterfassung & Projektmanagement (React + Express + Prisma + Postgr
 - `prisma`: Prisma Schema
 - `nginx`: Nginx Reverse Proxy + SPA Fallback
 
-## Vorbereitung (.env)
-```bash
-cp .env.example .env
-```
-
-Wichtige Variablen in `.env`:
-- `DATABASE_URL`
-- `JWT_ACCESS_SECRET`
-- `JWT_REFRESH_SECRET`
-- `DEFAULT_ADMIN_EMAIL`
-- `DEFAULT_ADMIN_PASSWORD`
-
 ## Quickstart (Production)
 ```bash
 docker compose up -d --build
@@ -37,38 +25,6 @@ App ist erreichbar unter:
 Wichtig:
 - Nur `web` published Port (`8080:80`)
 - `api` und `db` sind nur intern im Docker-Netz erreichbar
-
-## API läuft? (Prüfen)
-Im Browser:
-- `http://localhost:8080/api/health`
-
-Mit curl:
-```bash
-curl -sS http://localhost:8080/api/health
-```
-
-Erwartete Antwort:
-```json
-{"status":"ok"}
-```
-
-
-## API startet nicht? (Prisma/OpenSSL Troubleshooting)
-Wenn zuvor lokale `node_modules` existierten (z. B. Windows Host), können falsche Prisma-Binaries in den Container gelangen.
-Dieses Repo nutzt daher eine `.dockerignore`, die `node_modules` ausschließt.
-
-Empfohlener Clean-Rebuild:
-```bash
-docker compose down
-docker compose build --no-cache api web
-docker compose up -d
-docker compose logs -f api
-```
-
-Danach erneut prüfen:
-```bash
-curl -sS http://localhost:8080/api/health
-```
 
 ## Default Login (Seed)
 Beim ersten Start wird ein Admin erzeugt:
