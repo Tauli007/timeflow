@@ -1,0 +1,149 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum TimeEntryStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  LOCKED
+}
+
+enum VacationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                String     @id @default(cuid())
+  email             String     @unique
+  passwordHash      String
+  role              Role       @default(EMPLOYEE)
+  active            Boolean    @default(true)
+  failedLoginAttempts Int      @default(0)
+  lockedUntil       DateTime?
+  createdAt         DateTime   @default(now())
+  employee          Employee?
+  auditLogs         AuditLog[] @relation("actor")
+}
+
+model Employee {
+  id                String   @id @default(cuid())
+  firstName         String
+  lastName          String
+  personalNo        String?  @unique
+  dept              String?
+  position          String?
+  workDays          String[]
+  weeklyHours       Float    @default(40)
+  dailyHours        Float    @default(8)
+  hourlyRate        Float?
+  vacationPerYear   Int      @default(25)
+  remainingVacation Int      @default(25)
+  country           String?
+  region            String?
+  entryDate         DateTime?
+  deletedAt         DateTime?
+  linkedUserId      String?  @unique
+  linkedUser        User?    @relation(fields: [linkedUserId], references: [id])
+  vacationRequests  VacationRequest[]
+  timeEntries       TimeEntry[]
+}
+
+model Team {
+  id             String   @id @default(cuid())
+  name           String
+  dept           String?
+  leadEmployeeId String?
+  members        String[]
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  customer    String?
+  status      String   @default("active")
+  budgetHours Float?
+  hourlyRate  Float?
+  teamId      String?
+  archived    Boolean  @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  timeEntries TimeEntry[]
+}
+
+model TimeEntry {
+  id         String          @id @default(cuid())
+  userId     String
+  employeeId String
+  projectId  String?
+  date       DateTime
+  startTime  DateTime?
+  endTime    DateTime?
+  breakMin   Int             @default(0)
+  totalMin   Int             @default(0)
+  status     TimeEntryStatus @default(DRAFT)
+  notes      String?
+  deletedAt  DateTime?
+  employee   Employee        @relation(fields: [employeeId], references: [id])
+  project    Project?        @relation(fields: [projectId], references: [id])
+}
+
+model VacationRequest {
+  id         String         @id @default(cuid())
+  employeeId String
+  fromDate   DateTime
+  toDate     DateTime
+  days       Int
+  type       String
+  status     VacationStatus @default(PENDING)
+  approverId String?
+  comment    String?
+  deletedAt  DateTime?
+  employee   Employee       @relation(fields: [employeeId], references: [id])
+}
+
+model Holiday {
+  id      String   @id @default(cuid())
+  country String
+  region  String?
+  date    DateTime
+  name    String
+  type    String
+}
+
+model Setting {
+  id                   String  @id @default(cuid())
+  companyName          String  @default("TimeFlow GmbH")
+  defaultWeeklyHours   Int     @default(40)
+  defaultVacationDays  Int     @default(25)
+  enableWorkingTime    Boolean @default(true)
+  enableProjectTime    Boolean @default(true)
+  enableVacation       Boolean @default(true)
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  action      String
+  entity      String
+  entityId    String?
+  beforeJson  Json?
+  afterJson   Json?
+  createdAt   DateTime @default(now())
+  ip          String?
+  actor       User?    @relation("actor", fields: [actorUserId], references: [id])
+}
